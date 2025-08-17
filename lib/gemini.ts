@@ -1,4 +1,4 @@
-// Gemini API integration for generating grammar questions
+// Gemini API integration for generating G-TELP grammar questions
 export interface GrammarQuestion {
   question_text: string
   option_a: string
@@ -8,46 +8,47 @@ export interface GrammarQuestion {
   correct_answer: "A" | "B" | "C" | "D"
   explanation: string
   grammar_type: string
-  difficulty_level: "beginner" | "intermediate" | "advanced"
+  difficulty_level: "초급" | "중급" | "고급"
 }
 
 export async function generateGrammarQuestions(
   grammarType: string,
-  difficultyLevel: "beginner" | "intermediate" | "advanced",
-  count = 5,
+  difficultyLevel: "초급" | "중급" | "고급",
+  count = 1,
 ): Promise<GrammarQuestion[]> {
   const apiKey = process.env.GEMINI_API_KEY
-
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is not set")
   }
 
-  const prompt = `Generate ${count} English grammar questions about ${grammarType} at ${difficultyLevel} level.
+  const prompt = `너는 G-TELP 문법 출제자야. [문법유형: ${grammarType}], [난이도: ${difficultyLevel}]에 맞는 4지선다형 영어 문법 문제를 ${count}문항 만들어줘. 
 
-For each question, provide:
-1. A sentence with a blank (use _____ for the blank)
-2. Four multiple choice options (A, B, C, D)
-3. The correct answer (A, B, C, or D)
-4. A brief explanation of why the answer is correct
-5. Grammar type: ${grammarType}
-6. Difficulty level: ${difficultyLevel}
+문장은 빈칸이 한 곳 있으며, 보기 4개와 정답, 간단한 해설도 함께 제공해줘. 
 
-Format the response as a JSON array with this exact structure:
+출력 형식은 아래와 같아:
+문제: (빈칸이 있는 영어 문장)
+보기: A. B. C. D.
+정답: (정답 보기의 알파벳)
+해설: (정답이 왜 맞는지 한 문장으로 간단히 설명)
+문법유형: ${grammarType}
+난이도: ${difficultyLevel}
+
+응답은 반드시 다음과 같은 JSON 배열 형태로만 제공해줘:
 [
   {
     "question_text": "She _____ to school every day.",
     "option_a": "go",
-    "option_b": "goes",
+    "option_b": "goes", 
     "option_c": "going",
     "option_d": "gone",
     "correct_answer": "B",
-    "explanation": "Use 'goes' for third person singular in present simple tense.",
+    "explanation": "3인칭 단수 주어에는 현재시제 동사에 -s를 붙여 'goes'를 사용합니다.",
     "grammar_type": "${grammarType}",
     "difficulty_level": "${difficultyLevel}"
   }
 ]
 
-Make sure the questions are varied, educational, and appropriate for the ${difficultyLevel} level.`
+G-TELP 시험 스타일에 맞게 실용적이고 정확한 문제를 만들어줘.`
 
   try {
     const response = await fetch(
@@ -112,14 +113,19 @@ Make sure the questions are varied, educational, and appropriate for the ${diffi
       ) {
         throw new Error(`Invalid question format at index ${index}`)
       }
+
       if (!["A", "B", "C", "D"].includes(q.correct_answer)) {
         throw new Error(`Invalid correct_answer at index ${index}: ${q.correct_answer}`)
+      }
+
+      if (!["초급", "중급", "고급"].includes(q.difficulty_level)) {
+        throw new Error(`Invalid difficulty_level at index ${index}: ${q.difficulty_level}`)
       }
     })
 
     return questions
   } catch (error) {
-    console.error("Error generating questions with Gemini:", error)
+    console.error("Error generating G-TELP questions with Gemini:", error)
     throw error
   }
 }
